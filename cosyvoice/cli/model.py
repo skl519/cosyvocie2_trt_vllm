@@ -368,8 +368,8 @@ class CosyVoice2Model(CosyVoiceModel):
     def tts_test(self):
         t1 = time.time()
         this_uuid = 'test_uuid'
-        test_token2wav_dict = torch.load('pretrained_models/save_token2wav_dict.pth')
-        test_llm_dict = torch.load('pretrained_models/save_llm_dict.pth')
+        test_token2wav_dict = torch.load('asset/save_token2wav_dict.pth')
+        test_llm_dict = torch.load('asset/save_llm_dict.pth')
         with self.lock:
             self.tts_speech_token_dict[this_uuid], self.llm_end_dict[this_uuid] = [], False
             self.hift_cache_dict[this_uuid] = None
