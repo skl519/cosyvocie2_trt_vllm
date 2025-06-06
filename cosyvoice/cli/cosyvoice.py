@@ -179,12 +179,9 @@ class CosyVoice2(CosyVoice):
         if load_vllm:
             self.model.load_vllm('{}/vllm'.format(model_dir))
         
-        print(self.model.llm)
-        for n, p in self.model.llm.named_parameters():
-            print(f"Parameter name: {n}, Type: {type(p)}, Data type: {p.dtype}")
-
-
-
+        #print(self.model.llm)
+        #for n, p in self.model.llm.named_parameters():
+            #print(f"Parameter name: {n}, Type: {type(p)}, Data type: {p.dtype}")
         del configs
 
     def inference_instruct(self, *args, **kwargs):
