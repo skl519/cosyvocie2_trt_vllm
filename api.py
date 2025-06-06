@@ -114,30 +114,3 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=7860)
 
     
-
-
-
-
-
-
-
-"""
-model_name = "D:/FireRedASR-main/pretrained_models/FireRedASR-LLM-L/Qwen2-7B-Instruct"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForCausalLM.from_pretrained(model_name)
-
-prompt_text = f'''
-要求：Assistant:直接的回答
-任务：我正在做一个语音生成的任务。需要判断一段文本应该使用什么语气来表达，请对于我给出的可能富有语气的文本，生成应该使用什么语气的提示词
-示例：
-    input: 早上，我收到了一封邮件，打开一看，竟然是我一直梦寐以求的公司发来的录用通知
-    Assistant: 惊讶的语气的说出这句话
-input: {text}
-'''
-inputs = tokenizer(prompt_text, return_tensors="pt")
-outputs = model.generate(**inputs, max_length=150)
-generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-assistant_result = generated_text.split("Assistant:")[-1].strip()
-print('原始文本：',text)
-print('生成的结果：',assistant_result)  
-"""
