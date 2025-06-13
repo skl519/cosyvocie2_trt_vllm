@@ -42,7 +42,7 @@ WORKDIR /workspace
 
 ENV PYTHONPATH="/workspace/CosyVoice:/workspace/CosyVoice/third_party/Matcha-TTS"
 
-RUN git clone https://github.com/skl519/cosyvocie2_trt_vllm.git
+RUN git clone https://github.com/skl519/cosyvoice2_trt_vllm.git
 
 RUN conda activate ${VENV} && conda install -y -c conda-forge pynini==2.1.5
 RUN conda activate ${VENV} && cd cosyvoice2_trt_vllm && pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com
