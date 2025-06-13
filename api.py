@@ -16,7 +16,7 @@ from cosyvoice.utils.common import set_all_random_seed
 
 
 app = FastAPI()
-set_all_random_seed(999)
+set_all_random_seed(1024)
 stream = True
 merger_ratio = 1    # 1:0.2,  2:0.8
 cosyvoice = CosyVoice2('pretrained_models/CosyVoice2-0.5B', load_jit=False, load_trt=True, load_vllm=True, fp16=True, use_flow_cache=stream)
