@@ -50,10 +50,6 @@ RUN conda activate ${VENV} && cd CosyVoice && \
 
 WORKDIR /workspace/CosyVoice
 
-RUN modelscope download --model iic/CosyVoice2-0.5B --local_dir pretrained_models/CosyVoice2-0.5B
-
-
-RUN conda create -n cosyvoice_vllm --clone cosyvoice
+RUN modelscope download --model skl519/cosyvoice2-0.5-vllm-trt --local_dir pretrained_models/CosyVoice2-0.5B
 
 RUN pip install vllm==v0.9.0 -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com
-RUN conda activate cosyvoice_vllm
