@@ -40,6 +40,7 @@ api_url = f"ws://{host}/api/v1/tts/ws_binary"
 # message serialization method: b0001 (JSON) (4 bits)
 # message compression: b0001 (gzip) (4bits)
 # reserved data: 0x00 (1 byte)
+
 default_header = bytearray(b'\x11\x10\x11\x00')
 
 request_json = {
@@ -52,7 +53,7 @@ request_json = {
         "uid": "388808087185088"
     },
     "audio": {
-        "voice_type": "愤怒",
+        "voice_type": "丰富",
         "encoding": "mp3",
         "speed_ratio": 1.0,
         "volume_ratio": 1.0,
@@ -60,7 +61,13 @@ request_json = {
     },
     "request": {
         "reqid": "xxx",
-        "text": "看到这一幕，我气得浑身发抖，拳头攥得紧紧的，恨不得冲上去质问他们为什么要这样破坏别人辛苦建立的一切。", # '我收到录取通知书的那一刻,我高兴得跳起来'
+        "text": """作家莫言在演讲时讲过一段经历：
+                    在他上学的时候，一次学校组织去参观展览，同学们在看过展览后放声大哭。
+                    有的人明明没哭，为了迎合大家，还悄悄地将唾沫抹到脸上冒充泪水。
+                    环顾一周发现，有位同学脸上竟没有一滴眼泪，他看着大家，眼神里都是困惑和惊讶。
+                    展览结束后，十几位同学都去将这位同学的"与众不同"报告了老师。
+                    很多年过去了，再次回想起这件事，莫言突然明白了一个道理："当众人都哭时，应该允许有的人不哭。"
+                    世人千万种，各有各的悲欢，各有各的选择，永远别用自己的情感准则，去要求别人哭或笑。""",
         "text_type": "plain",
         "operation": "xxx"
     }
@@ -79,18 +86,22 @@ async def test_submit():
     print("\n------------------------ test 'submit' -------------------------")
     print("request json: ", submit_request_json)
     print("\nrequest bytes: ", full_client_request)
-    #file_to_save = open("test_submit.mp3", "wb")
+    
     header = {"Authorization": f"Bearer; {token}"}
     async with websockets.connect(api_url, extra_headers=header, ping_interval=None) as ws:
         await ws.send(full_client_request)
         all_audio_data = []  # 用于存储接收到的音频数据
+        total_delay = 0  # 累积延迟
         try:
+            seq = 1
             while True:
                 t1 = time.time()
                 res = await ws.recv()
-                print(f'延迟：{time.time()-t1}')
+                delay = time.time() - t1
+                total_delay += delay  # 累积延迟
+                print(f'第{seq}个包 延迟：{delay}')
                 done = parse_response(res, all_audio_data)  # 修改为接收音频数据
-                print(done)
+                seq += 1
                 if done:
                     break
         except websockets.exceptions.ConnectionClosed:
@@ -100,34 +111,25 @@ async def test_submit():
             if all_audio_data:
                 combined_audio = np.concatenate(all_audio_data)  # 合并所有音频数据
                 torchaudio.save("output_api.wav", torch.from_numpy(combined_audio).unsqueeze(0), 24000)  # 保存为 WAV 文件
+                
+                # 计算合成音频的时长
+                audio_length = combined_audio.shape[0] / 24000  # 24000 是采样率
+                print(f'总延迟：{total_delay}')  # 打印总延迟
+                print(f'合成音频时长：{audio_length:.2f} 秒')
+                
+                # 计算 RTF
+                if total_delay > 0:
+                    rtf =  total_delay / audio_length
+                    print(f'RTF:{rtf:.2f}')
+                else:
+                    print('总延迟为零，无法计算 RTF。')
+            
             print("\nclosing the connection...")
 
 
-async def test_query():
-    query_request_json = copy.deepcopy(request_json)
-    query_request_json["audio"]["voice_type"] = voice_type
-    query_request_json["request"]["reqid"] = str(uuid.uuid4())
-    query_request_json["request"]["operation"] = "query"
-    payload_bytes = str.encode(json.dumps(query_request_json))
-    payload_bytes = gzip.compress(payload_bytes)  # if no compression, comment this line
-    full_client_request = bytearray(default_header)
-    full_client_request.extend((len(payload_bytes)).to_bytes(4, 'big'))  # payload size(4 bytes)
-    full_client_request.extend(payload_bytes)  # payload
-    print("\n------------------------ test 'query' -------------------------")
-    print("request json: ", query_request_json)
-    print("\nrequest bytes: ", full_client_request)
-    file_to_save = open("test_query.mp3", "wb")
-    header = {"Authorization": f"Bearer; {token}"}
-    async with websockets.connect(api_url, extra_headers=header, ping_interval=None) as ws:
-        await ws.send(full_client_request)
-        res = await ws.recv()
-        parse_response(res, file_to_save)
-        file_to_save.close()
-        print("\nclosing the connection...")
-
 
 def parse_response(res, audio_data_list):
-    print("--------------------------- response ---------------------------")
+    #print("--------------------------- response ---------------------------")
     # print(f"response raw bytes: {res}")
     protocol_version = res[0] >> 4                  # 0b0001
     header_size = res[0] & 0x0f                     # 报头大小*4 整个报文字段为4个字节
@@ -138,13 +140,13 @@ def parse_response(res, audio_data_list):
     reserved = res[3]                               # 保留字段，同时作为边界 (使整个报头大小为4个字节).
     header_extensions = res[4:header_size*4]        # 
     payload = res[header_size*4:]
-    print(f"            Protocol version: {protocol_version:#x} - version {protocol_version}")
-    print(f"                 Header size: {header_size:#x} - {header_size * 4} bytes ")
-    print(f"                Message type: {message_type:#x} - {MESSAGE_TYPES[message_type]}")
-    print(f" Message type specific flags: {message_type_specific_flags:#x} - {MESSAGE_TYPE_SPECIFIC_FLAGS[message_type_specific_flags]}")
-    print(f"Message serialization method: {serialization_method:#x} - {MESSAGE_SERIALIZATION_METHODS[serialization_method]}")
-    print(f"         Message compression: {message_compression:#x} - {MESSAGE_COMPRESSIONS[message_compression]}")
-    print(f"                    Reserved: {reserved:#04x}")
+    #print(f"            Protocol version: {protocol_version:#x} - version {protocol_version}")
+    #print(f"                 Header size: {header_size:#x} - {header_size * 4} bytes ")
+    #print(f"                Message type: {message_type:#x} - {MESSAGE_TYPES[message_type]}")
+    #print(f" Message type specific flags: {message_type_specific_flags:#x} - {MESSAGE_TYPE_SPECIFIC_FLAGS[message_type_specific_flags]}")
+    #print(f"Message serialization method: {serialization_method:#x} - {MESSAGE_SERIALIZATION_METHODS[serialization_method]}")
+    #print(f"         Message compression: {message_compression:#x} - {MESSAGE_COMPRESSIONS[message_compression]}")
+    #print(f"                    Reserved: {reserved:#04x}")
     if header_size != 1:
         print(f"           Header extensions: {header_extensions}")
     if message_type == 0xb:  # audio-only server response

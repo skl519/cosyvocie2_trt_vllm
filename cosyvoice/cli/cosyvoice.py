@@ -208,7 +208,7 @@ class CosyVoice2(CosyVoice):
         for i in tqdm(self.frontend.text_normalize(tts_text, split=True, text_frontend=text_frontend)):
             t1 = time.time()
             prompt_text_token, prompt_text_token_len = self.frontend._extract_text_token(instruct_text)        # 指令文本 2token (1,9)
-            tts_text_token, tts_text_token_len = self.frontend._extract_text_token(tts_text)
+            tts_text_token, tts_text_token_len = self.frontend._extract_text_token(i)
             model_input['text'] = tts_text_token
             model_input['text_len'] = tts_text_token_len
             model_input['prompt_text'] = prompt_text_token
