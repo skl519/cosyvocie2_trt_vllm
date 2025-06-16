@@ -110,7 +110,7 @@ async def test_submit():
             # 保存接收到的音频数据
             if all_audio_data:
                 combined_audio = np.concatenate(all_audio_data)  # 合并所有音频数据
-                torchaudio.save("output_api.wav", torch.from_numpy(combined_audio).unsqueeze(0), 24000)  # 保存为 WAV 文件
+                torchaudio.save("asset/output_api.wav", torch.from_numpy(combined_audio).unsqueeze(0), 24000)  # 保存为 WAV 文件
                 
                 # 计算合成音频的时长
                 audio_length = combined_audio.shape[0] / 24000  # 24000 是采样率
