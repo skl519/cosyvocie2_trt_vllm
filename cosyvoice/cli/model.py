@@ -365,40 +365,6 @@ class CosyVoice2Model(CosyVoiceModel):
                 tts_speech = fade_in_out(tts_speech, self.hift_cache_dict[uuid]['speech'], self.speech_window)
         return tts_speech
     
-    def tts_test(self):
-        t1 = time.time()
-        this_uuid = 'test_uuid'
-        test_token2wav_dict = torch.load('asset/save_token2wav_dict.pth')
-        test_llm_dict = torch.load('asset/save_llm_dict.pth')
-        with self.lock:
-            self.tts_speech_token_dict[this_uuid], self.llm_end_dict[this_uuid] = [], False
-            self.hift_cache_dict[this_uuid] = None
-            self.flow_cache_dict[this_uuid] = self.init_flow_cache()
-
-        for i in range(10):
-            _ = self.token2wav(token=test_token2wav_dict['token'],
-                                    prompt_token=test_token2wav_dict['prompt_token'],
-                                    prompt_feat=test_token2wav_dict['prompt_feat'],
-                                    embedding=test_token2wav_dict['embedding'],
-                                    uuid=this_uuid,
-                                    finalize=False)
-            _ = self.token2wav(token=test_token2wav_dict['token'],
-                        prompt_token=test_token2wav_dict['prompt_token'],
-                        prompt_feat=test_token2wav_dict['prompt_feat'],
-                        embedding=test_token2wav_dict['embedding'],
-                        uuid=this_uuid,
-                        finalize=True)
-            
-            for i in self.llm.inference(text=test_llm_dict['text'].to(self.device),
-                                text_len=torch.tensor([test_llm_dict['text'].shape[1]], dtype=torch.int32).to(self.device),
-                                prompt_text=test_llm_dict['prompt_text'].to(self.device),
-                                prompt_text_len=torch.tensor([test_llm_dict['prompt_text'].shape[1]], dtype=torch.int32).to(self.device),
-                                prompt_speech_token=test_llm_dict['llm_prompt_speech_token'].to(self.device),
-                                prompt_speech_token_len=torch.tensor([test_llm_dict['llm_prompt_speech_token'].shape[1]], dtype=torch.int32).to(self.device),
-                                embedding=test_llm_dict['llm_embedding'].to(self.device)):
-                pass
-        print(f'测试处理时间：{time.time()-t1}')
-
     def tts(self, text=torch.zeros(1, 0, dtype=torch.int32), flow_embedding=torch.zeros(0, 192), llm_embedding=torch.zeros(0, 192),
             prompt_text=torch.zeros(1, 0, dtype=torch.int32),
             llm_prompt_speech_token=torch.zeros(1, 0, dtype=torch.int32),
