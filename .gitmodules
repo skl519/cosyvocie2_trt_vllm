@@ -1,3 +1,6 @@
 [submodule "Matcha-TTS"]
 	path = Matcha-TTS
 	url = https://github.com/shivammehta25/Matcha-TTS.git
+[submodule "third_party/Matcha-TTS"]
+	path = third_party/Matcha-TTS
+	url = https://github.com/shivammehta25/Matcha-TTS.git
