@@ -2,9 +2,9 @@ FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
 
 ARG VENV_NAME="cosyvoice"
 ENV VENV=$VENV_NAME
-ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
-
-ENV DEBIAN_FRONTEN=noninteractive
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 SHELL ["/bin/bash", "--login", "-c"]
 
@@ -40,11 +40,15 @@ ENV PATH=/opt/conda/bin:/opt/conda/envs/${VENV}/bin:$PATH
 
 WORKDIR /workspace
 
-#ENV PYTHONPATH="${PYTHONPATH}:/workspace/CosyVoice:/workspace/CosyVoice/third_party/Matcha-TTS"
+ENV PYTHONPATH="/workspace/CosyVoice:/workspace/CosyVoice/third_party/Matcha-TTS"
 
-RUN git clone --recursive https://github.com/FunAudioLLM/CosyVoice.git
+RUN git clone --recursive https://github.com/skl519/cosyvocie2_trt_vllm.git
 
 RUN conda activate ${VENV} && conda install -y -c conda-forge pynini==2.1.5
-#RUN conda activate ${VENV} && cd CosyVoice && pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com
+RUN conda activate ${VENV} && cd cosyvocie2_trt_vllm && pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com
 
-WORKDIR /workspace/CosyVoice
+WORKDIR /workspace/cosyvocie2_trt_vllm
+
+RUN modelscope download --model skl519/cosyvoice2-0.5-vllm-trt --local_dir pretrained_models/CosyVoice2-0.5B
+
+RUN pip install vllm==v0.9.0 -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com
