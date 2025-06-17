@@ -62,14 +62,15 @@ model_input = {'flow_prompt_speech_token': speech_token, 'flow_prompt_speech_tok
                 'llm_embedding': embedding, 'flow_embedding': embedding}
 
 
+warmup_lengths = [1, 10, 20, 30, 40, 50, 60, 70, 80]
 template_text = "收到好友从远方寄来的生日礼物，那份意外的惊喜与深深的祝福让我心中充满了甜蜜的快乐，笑容如花儿般绽放。"
-warmup_lengths = [10, 30, 50, 80, 100, 150, 200, 300]
 num_runs_per_length = 3
+
 for length in warmup_lengths:
     input_text = (template_text * (length // len(template_text) + 1))[:length]
     print(f"Warming up with text length: {len(input_text)}")
     for _ in range(num_runs_per_length):
-        for i in cosyvoice.my_inference_instruct2(input_text,'用丰富的情感表达' + '<|endofprompt|>',model_input,stream=True,speed=1):
+        for i in cosyvoice.my_inference_instruct2(input_text, '用丰富的情感表达' + '<|endofprompt|>', model_input, stream=True, speed=1):
             pass
 
 def construct_binary_message(payload: bytes = None,sequence_number: int = None, ACK=False) -> bytes:
