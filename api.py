@@ -14,13 +14,17 @@ from cosyvoice.cli.cosyvoice import CosyVoice2
 from cosyvoice.utils.file_utils import load_wav
 from cosyvoice.utils.common import set_all_random_seed
 
-
 app = FastAPI()
 set_all_random_seed(1024)
 stream = True
+auto_emotion = False    
+DEFAULT_EMOTION_MODEL = "roberta"  # 默认使用roberta模型 (可选: roberta, qwen, chinese_roberta, none)
 merger_ratio = 1    # 1:0.2,  2:0.8
+
+
+# 模型加载，嵌入混合
 cosyvoice = CosyVoice2('pretrained_models/CosyVoice2-0.5B', load_jit=True, load_trt=True, load_vllm=True, fp16=True, use_flow_cache=stream)
-prompt1_speech_16k = load_wav('asset/Tingting6_prompt.wav', 16000)
+prompt1_speech_16k = load_wav('asset/000082.wav', 16000)
 prompt2_speech_16k = load_wav('asset/zero_shot_prompt.wav', 16000)
 
 print(prompt1_speech_16k.shape)
@@ -45,7 +49,7 @@ else:
     prompt_speech_16k = prompt1_speech_16k
 
 
-
+# 模型输入预处理
 resample_rate = 24000
 prompt_speech_resample = torchaudio.transforms.Resample(orig_freq=16000, new_freq=resample_rate)(prompt_speech_16k)
 speech_feat, speech_feat_len = cosyvoice.frontend._extract_speech_feat(prompt_speech_resample)        # prompt语音提取梅尔频谱特征 (1,1113,80) (1)
@@ -61,7 +65,14 @@ model_input = {'flow_prompt_speech_token': speech_token, 'flow_prompt_speech_tok
                 'prompt_speech_feat': speech_feat, 'prompt_speech_feat_len': speech_feat_len,
                 'llm_embedding': embedding, 'flow_embedding': embedding}
 
+# 情感检测 加载
+emotion_detector_instance = None
+if auto_emotion:
+    from cosyvoice.emotion_detector import EmotionDetector
+    emotion_detector_instance = EmotionDetector(DEFAULT_EMOTION_MODEL)
 
+
+# 模型预热
 warmup_lengths = [1, 10, 20, 30, 40, 50, 60, 70, 80]
 template_text = "收到好友从远方寄来的生日礼物，那份意外的惊喜与深深的祝福让我心中充满了甜蜜的快乐，笑容如花儿般绽放。"
 num_runs_per_length = 3
@@ -72,6 +83,7 @@ for length in warmup_lengths:
     for _ in range(num_runs_per_length):
         for i in cosyvoice.my_inference_instruct2(input_text, '用丰富的情感表达' + '<|endofprompt|>', model_input, stream=True, speed=1):
             pass
+
 
 def construct_binary_message(payload: bytes = None,sequence_number: int = None, ACK=False) -> bytes:
     header =  bytearray(b'\x11\xb0\x11\x00') if ACK else bytearray(b'\x11\xb1\x11\x00')
@@ -94,7 +106,7 @@ async def tts_websocket(websocket: WebSocket):
                 text_type = request_data.get("request", {}).get("text_type", "")
                 emotion = request_data.get('audio', {}).get('voice_type', '')
                 speed_ratio = request_data.get('audio', {}).get('speed_ratio', 1.0)
-
+                
                 prompt_text = ''
                 if text_type != '':
                     prompt_text += f'用{text_type}说出这句话' 
@@ -108,7 +120,15 @@ async def tts_websocket(websocket: WebSocket):
                     print('指定的情绪:', emotion)
                     print('prompt_text:', prompt_text)
                     #await websocket.send_bytes(construct_binary_message(ACK=True))
-                    for idx, j in enumerate(cosyvoice.my_inference_instruct2(text, prompt_text, model_input, stream=stream,speed=speed_ratio)): 
+                    for idx, j in enumerate(cosyvoice.my_inference_instruct2(
+                        text, 
+                        prompt_text, 
+                        model_input, 
+                        stream=stream, 
+                        speed=speed_ratio,
+                        text_frontend=True,
+                        emotion_model=emotion_detector_instance
+                    )): 
                         speech = j['tts_speech']
                         audio_bytes = speech.cpu().numpy().tobytes()
                         audio_message = construct_binary_message(payload=audio_bytes, sequence_number=idx + 1)

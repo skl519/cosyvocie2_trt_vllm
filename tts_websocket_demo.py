@@ -58,6 +58,8 @@ request_json = {
         "speed_ratio": 1.0,
         "volume_ratio": 1.0,
         "pitch_ratio": 1.0,
+        "auto_emotion": True,
+        "emotion_model": "roberta"
     },
     "request": {
         "reqid": "xxx",
@@ -68,7 +70,7 @@ request_json = {
                     展览结束后，十几位同学都去将这位同学的"与众不同"报告了老师。
                     很多年过去了，再次回想起这件事，莫言突然明白了一个道理："当众人都哭时，应该允许有的人不哭。"
                     世人千万种，各有各的悲欢，各有各的选择，永远别用自己的情感准则，去要求别人哭或笑。""",
-        "text_type": "plain",
+        "text_type": "",
         "operation": "xxx"
     }
 }

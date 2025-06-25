@@ -24,7 +24,6 @@ from cosyvoice.cli.model import CosyVoiceModel, CosyVoice2Model
 from cosyvoice.utils.file_utils import logging
 from cosyvoice.utils.class_utils import get_model_type
 
-
 class CosyVoice:
 
     def __init__(self, model_dir, load_jit=False, load_trt=False, fp16=False):
@@ -199,12 +198,21 @@ class CosyVoice2(CosyVoice):
                 yield model_output
                 start_time = time.time()
 
-    def my_inference_instruct2(self, tts_text, instruct_text, model_input=None, stream=False, speed=1.0, text_frontend=True):
+    def my_inference_instruct2(self, tts_text, instruct_text, model_input=None, stream=False, speed=1.0, text_frontend=True, emotion_model=None):
         assert isinstance(self.model, CosyVoice2Model), 'inference_instruct2 is only implemented for CosyVoice2!'
         
         for i in tqdm(self.frontend.text_normalize(tts_text, split=True, text_frontend=text_frontend)):
             t1 = time.time()
-            prompt_text_token, prompt_text_token_len = self.frontend._extract_text_token(instruct_text)        # 指令文本 2token (1,9)
+            
+            # 情感选择逻辑
+            current_instruct = instruct_text
+            if emotion_model is not None:
+                # 使用情感检测器进行检测
+                detected_emotion = emotion_model.detect_emotion(i)
+                current_instruct = f'用{detected_emotion}的情感表达<|endofprompt|>'
+                logging.info(f'AI检测到情感: {detected_emotion}, 文本: {i}')
+            
+            prompt_text_token, prompt_text_token_len = self.frontend._extract_text_token(current_instruct)        # 指令文本 2token (1,9)
             tts_text_token, tts_text_token_len = self.frontend._extract_text_token(i)
             model_input['text'] = tts_text_token
             model_input['text_len'] = tts_text_token_len
@@ -213,7 +221,7 @@ class CosyVoice2(CosyVoice):
             start_time = time.time()
             logging.info('synthesis text {}, 预处理时间：{}'.format(i,time.time()-t1))
 
-            for model_output in self.model.tts(**model_input, stream=stream, speed=speed, origin_text=instruct_text+tts_text):
+            for model_output in self.model.tts(**model_input, stream=stream, speed=speed, origin_text=current_instruct+tts_text):
                 speech_len = model_output['tts_speech'].shape[1] / self.sample_rate
                 logging.info('yield speech len {}, rtf {}, time {}'.format(speech_len, (time.time() - start_time) / speech_len, time.time() - start_time))
                 yield model_output

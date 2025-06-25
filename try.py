@@ -68,8 +68,8 @@ text = '''作家莫言在演讲时讲过一段经历：
 
 # 开始语音合成
 speech_list = []
-for i, j in enumerate(cosyvoice.inference_instruct2(text, '用丰富的情感表达', prompt_speech_16k, stream=True)):
-#for j in cosyvoice.my_inference_instruct2(text, '用丰富的情感表达' + '<|endofprompt|>', model_input, stream=True,speed=1):
+#for i, j in enumerate(cosyvoice.inference_instruct2(text, '用丰富的情感表达', prompt_speech_16k, stream=True)):
+for j in cosyvoice.my_inference_instruct2(text, '用丰富的情感表达' + '<|endofprompt|>', model_input, stream=True,speed=1):
     
     speech_tensor = j['tts_speech']
     # 确保所有片段的采样率一致
