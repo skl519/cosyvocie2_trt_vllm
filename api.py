@@ -6,7 +6,7 @@ from typing import Optional
 import numpy as np
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-import noisereduce as nr
+
 """
 出现流式分段合成后，腔调不一致的问题，不要切割，直接合成
 参考音频3-10s即可
