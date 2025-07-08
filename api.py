@@ -6,7 +6,11 @@ from typing import Optional
 import numpy as np
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-
+import noisereduce as nr
+"""
+出现流式分段合成后，腔调不一致的问题，不要切割，直接合成
+参考音频3-10s即可
+"""
 from fastapi.websockets import WebSocketState
 import torchaudio
 sys.path.append('third_party/Matcha-TTS')
@@ -24,7 +28,7 @@ merger_ratio = 1    # 1:0.2,  2:0.8
 
 # 模型加载，嵌入混合
 cosyvoice = CosyVoice2('pretrained_models/CosyVoice2-0.5B', load_jit=True, load_trt=True, load_vllm=True, fp16=True, use_flow_cache=stream)
-prompt1_speech_16k = load_wav('asset/000082.wav', 16000)
+prompt1_speech_16k = load_wav('asset/re.wav', 16000)
 prompt2_speech_16k = load_wav('asset/zero_shot_prompt.wav', 16000)
 
 print(prompt1_speech_16k.shape)
@@ -73,7 +77,7 @@ if auto_emotion:
 
 
 # 模型预热
-warmup_lengths = [1, 10, 20, 30, 40, 50, 60, 70, 80]
+warmup_lengths = [5, 10, 20, 30, 40, 50, 60, 70, 80]
 template_text = "收到好友从远方寄来的生日礼物，那份意外的惊喜与深深的祝福让我心中充满了甜蜜的快乐，笑容如花儿般绽放。"
 num_runs_per_length = 3
 
@@ -130,6 +134,8 @@ async def tts_websocket(websocket: WebSocket):
                         emotion_model=emotion_detector_instance
                     )): 
                         speech = j['tts_speech']
+                        # 可选：降噪、静音裁剪
+
                         audio_bytes = speech.cpu().numpy().tobytes()
                         audio_message = construct_binary_message(payload=audio_bytes, sequence_number=idx + 1)
                         await websocket.send_bytes(audio_message)
