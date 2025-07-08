@@ -28,7 +28,7 @@ merger_ratio = 1    # 1:0.2,  2:0.8
 
 # 模型加载，嵌入混合
 cosyvoice = CosyVoice2('pretrained_models/CosyVoice2-0.5B', load_jit=True, load_trt=True, load_vllm=True, fp16=True, use_flow_cache=stream)
-prompt1_speech_16k = load_wav('asset/re.wav', 16000)
+prompt1_speech_16k = load_wav('asset/000082.wav', 16000)
 prompt2_speech_16k = load_wav('asset/zero_shot_prompt.wav', 16000)
 
 print(prompt1_speech_16k.shape)

@@ -143,7 +143,8 @@ class CosyVoiceFrontEnd:
                 text = text.replace(" - ", "，")
                 text = remove_bracket(text)
                 text = re.sub(r'[，,、]+$', '。', text)
-                texts = list(split_paragraph(text, partial(self.tokenizer.encode, allowed_special=self.allowed_special), "zh", token_max_n=80,
+                # 设置token_max_n为9999999，避免分段，分段造成音色不一致
+                texts = list(split_paragraph(text, partial(self.tokenizer.encode, allowed_special=self.allowed_special), "zh", token_max_n=9999999,
                                              token_min_n=60, merge_len=20, comma_split=False))
             else:
                 text = self.en_tn_model.normalize(text)
