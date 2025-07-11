@@ -6,5 +6,4 @@ docker run --gpus=all -it --name cosyvoice_trt_vllm -v /root/cosyvoice:/workspac
 git clone https://github.com/shivammehta25/Matcha-TTS.git
 
 pip install numpy==1.26.4
-pip install triton==2.3.1
-pip install protobuf==4.25.0
+pip install websockets==12.0
